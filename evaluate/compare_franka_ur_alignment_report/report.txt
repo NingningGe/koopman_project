@@ -1,0 +1,36 @@
+=== Franka vs UR Alignment Report ===
+
+[Raw data]
+Franka transitions: 2048000
+UR transitions: 1984000
+Franka delta mean: 0.004882
+UR delta mean: 0.003711
+Franka action norm mean: 3.792259
+UR action norm mean: 2.159184
+Franka effective rank: 10
+UR effective rank: 10
+
+[Latent quality]
+Franka source avg std: 0.992662
+UR before avg std: 3.670903
+UR after avg std: 0.556861
+Franka source avg saturation: 0.245050
+UR before avg saturation: 0.890037
+UR after avg saturation: 0.113238
+
+[Distribution distance]
+Before mean_l2: 12.224312
+After  mean_l2: 0.189156
+Before cov_fro: 92.909912
+After  cov_fro: 3.801368
+
+[Koopman]
+Train 1-step MSE: 0.00022091821301728487
+Franka 50-step rollout MSE: 0.030689
+UR(mapped) 50-step rollout MSE: 0.007425
+
+[Diagnosis]
+- UR 对齐后与 Franka 的 latent 均值距离下降。
+- UR 对齐后与 Franka 的 latent 协方差距离下降，说明分布形状更接近。
+- UR 对齐后 latent 饱和没有变差。
+- UR(mapped) 的多步 rollout MSE 小于 Franka，说明映射后的 UR latent 较平滑、较线性。

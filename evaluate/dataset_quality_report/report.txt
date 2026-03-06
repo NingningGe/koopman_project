@@ -1,0 +1,24 @@
+=== Dataset Quality Report ===
+
+dataset_path: /home/nng/koopman_project/data_wang_franka_reach_ablation/dataset_wang_franka_reach_ablation_v2.pt
+num_episodes: 320
+episode_len: 200
+num_transitions: 64000
+obs_dim: 14
+act_dim: 7
+
+--- Raw coverage ---
+delta_norm mean/std: 0.006431 / 0.012399
+action_norm mean/std: 3.784982 / 0.477568
+effective rank: 11
+participation ratio: 4.615
+episode diversity mean: 1.285880
+
+--- Scores ---
+raw_quality_score_0_100: 68.6
+overall_score_0_100: 68.6
+
+--- Diagnosis ---
+- 原始状态有效秩尚可。
+- 每步状态变化幅度尚可。
+- episode 间多样性尚可。

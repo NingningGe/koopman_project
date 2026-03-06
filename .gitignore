@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large training artifacts
+out_align_koopman*/
+out_bc_franka*/
+out*/
+checkpoints/
+runs/
+wandb/
+
+# Datasets / tensors
+data_wang_franka_reach_ablation/
+data_wang_ur_reach_ablation/
+*.pt
+*.pth
+*.ckpt
+
+# Images / reports you may not want by default
+# *.png
+# *.jpg
+# *.pdf
