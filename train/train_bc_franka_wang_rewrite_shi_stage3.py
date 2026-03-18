@@ -51,6 +51,20 @@ class Cfg:
     koopman_encode_bs: int = 4096
     koopman_rollout_horizon: int = 50
 
+    # ---- Shi-style Stage 3: Z = [Y; g_theta(Y)] ----
+    koopman_lift_dim: int = 12          # 建议先设为 d=n；若 <=0 则自动等于 lat_obs_dim
+    koopman_hidden_dim: int = 256
+    koopman_lift_layers: int = 2
+    koopman_lr: float = 3e-4
+    total_steps_koopman: int = 12000
+    koopman_refit_freq: int = 200
+    koopman_batch_episodes: int = 64
+    koopman_train_horizon: int = 15
+    koopman_one_step_weight: float = 1.0
+    koopman_multi_step_weight: float = 1.0
+    koopman_g_reg_weight: float = 1e-4
+    koopman_grad_clip: float = 10.0
+
     skip_stage1: bool = True
     skip_stage2: bool = True
     load_stage1_ckpt: str = ""
@@ -384,11 +398,26 @@ class ObsActAligner:
         }
 
 
+class LiftingNet(nn.Module):
+    """Shi-style lifting network g_theta: Y -> g_theta(Y), then Z=[Y; g_theta(Y)]."""
+    def __init__(self, y_dim: int, g_dim: int, n_layers: int, hidden_dim: int):
+        super().__init__()
+        self.y_dim = y_dim
+        self.g_dim = g_dim
+        self.net = build_mlp(y_dim, g_dim, n_layers, hidden_dim, activation="relu", out_act="identity")
+
+    def forward(self, y: torch.Tensor) -> torch.Tensor:
+        return self.net(y)
+
+    def lift(self, y: torch.Tensor) -> torch.Tensor:
+        g = self.forward(y)
+        return torch.cat([y, g], dim=-1)
+
+
 @torch.no_grad()
 def fit_koopman_ridge_cpu(z: torch.Tensor, u: torch.Tensor, z_next: torch.Tensor, ridge: float = 1e-4):
     assert z.device.type == "cpu" and u.device.type == "cpu" and z_next.device.type == "cpu"
-    N, dz = z.shape
-    du = u.shape[1]
+    _, dz = z.shape
     X = torch.cat([z, u], dim=1)
     Y = z_next
     XtX = X.T @ X
@@ -447,6 +476,37 @@ def encode_latent_batched_tgt_mapped(tgt_agent, aligner, s_all, a_all, sn_all, b
     return torch.cat(z_list, dim=0), torch.cat(u_list, dim=0), torch.cat(zn_list, dim=0)
 
 
+@torch.no_grad()
+def reshape_to_episodes_cpu(z_flat: torch.Tensor, u_flat: torch.Tensor, T: int):
+    n = z_flat.shape[0]
+    assert n % T == 0, f"N={n} is not divisible by episode_len={T}"
+    e = n // T
+    return z_flat.view(e, T, -1), u_flat.view(e, T, -1)
+
+
+@torch.no_grad()
+def lift_batched_cpu(lifter: LiftingNet, y: torch.Tensor, batch_size: int = 8192) -> torch.Tensor:
+    dev = next(lifter.parameters()).device
+    outs = []
+    for i in range(0, y.shape[0], batch_size):
+        yy = y[i:i+batch_size].to(dev)
+        zz = lifter.lift(yy).cpu()
+        outs.append(zz)
+    return torch.cat(outs, dim=0)
+
+
+@torch.no_grad()
+def lift_seq_batched(lifter: LiftingNet, y_seq: torch.Tensor, batch_size_eps: int = 64) -> torch.Tensor:
+    dev = next(lifter.parameters()).device
+    outs = []
+    e = y_seq.shape[0]
+    for i in range(0, e, batch_size_eps):
+        yy = y_seq[i:i+batch_size_eps].to(dev)
+        zz = lifter.lift(yy.reshape(-1, yy.shape[-1])).reshape(yy.shape[0], yy.shape[1], -1)
+        outs.append(zz.cpu())
+    return torch.cat(outs, dim=0)
+
+
 def save_stage2_bundle(tgt_dir: str, tgt: TgtAgent, aligner: ObsActAligner):
     os.makedirs(tgt_dir, exist_ok=True)
     torch.save(tgt.state_dict(), os.path.join(tgt_dir, "tgt_agent.pt"))
@@ -468,6 +528,52 @@ def load_stage1(src: SrcAgent, src_ckpt: str, device):
     if not os.path.exists(src_ckpt):
         raise FileNotFoundError(f"Stage1 ckpt not found: {src_ckpt}")
     src.load_state_dict(torch.load(src_ckpt, map_location=device))
+
+
+@torch.no_grad()
+def load_stage2_if_needed(tgt: TgtAgent, aligner: ObsActAligner, stage2_bundle: str, device):
+    if not stage2_bundle:
+        return
+    if not os.path.exists(stage2_bundle):
+        raise FileNotFoundError(f"Stage2 bundle not found: {stage2_bundle}")
+    bundle = torch.load(stage2_bundle, map_location=device)
+    if "tgt_agent" in bundle:
+        tgt.load_state_dict(bundle["tgt_agent"])
+    if "map_z_t2s" in bundle:
+        aligner.z_t2s.load_state_dict(bundle["map_z_t2s"])
+    if "map_z_s2t" in bundle:
+        aligner.z_s2t.load_state_dict(bundle["map_z_s2t"])
+    if "map_u_t2s" in bundle:
+        aligner.u_t2s.load_state_dict(bundle["map_u_t2s"])
+    if "map_u_s2t" in bundle:
+        aligner.u_s2t.load_state_dict(bundle["map_u_s2t"])
+
+
+@torch.no_grad()
+def eval_multi_step_rollout_lifted(y_seq, u_seq, lifter, A, B, horizon=50, name=""):
+    dev = next(lifter.parameters()).device
+    y_seq = y_seq.to(dev)
+    u_seq = u_seq.to(dev)
+    A = A.to(dev)
+    B = B.to(dev)
+
+    e, t, _ = y_seq.shape
+    h = min(horizon, t - 1)
+    idx = torch.randperm(e, device=dev)[: min(e, 64)]
+    y0 = y_seq[idx, 0]
+    u = u_seq[idx, :h]
+    gt = lifter.lift(y_seq[idx, 1:h+1].reshape(-1, y_seq.shape[-1])).reshape(idx.shape[0], h, -1)
+
+    z = lifter.lift(y0)
+    preds = []
+    for k in range(h):
+        z = (A @ z.unsqueeze(-1)).squeeze(-1) + (B @ u[:, k].unsqueeze(-1)).squeeze(-1)
+        preds.append(z)
+    pred = torch.stack(preds, dim=1)
+    mse_z = torch.mean((pred - gt) ** 2).item()
+    mse_y = torch.mean((pred[..., :y_seq.shape[-1]] - y_seq[idx, 1:h+1]) ** 2).item()
+    print(f"[EVAL] {name} {h}-step lifted rollout MSE: Z={mse_z:.6f}, Y={mse_y:.6f}")
+    return {"mse_z": mse_z, "mse_y": mse_y}
 
 
 def main():
@@ -595,8 +701,10 @@ def main():
         grad_clip_align=cfg.grad_clip_align,
     )
 
+    stage2_bundle = cfg.load_stage2_ckpt if cfg.load_stage2_ckpt else os.path.join(tgt_dir, "stage2_bundle.pt")
     if cfg.skip_stage2:
-        print("[STAGE 2] skipped by config")
+        print(f"[STAGE 2] skip training, loading bundle: {stage2_bundle}")
+        load_stage2_if_needed(tgt, aligner, stage2_bundle, device)
     else:
         print("[STAGE 2] Aligning target (UR) to source latent space ...")
         t0 = time.time()
@@ -625,67 +733,140 @@ def main():
         save_stage2_bundle(tgt_dir, tgt, aligner)
         print(f"[STAGE 2 DONE] saved tgt+bundle -> {tgt_dir}")
 
-    print("[STAGE 3] Building aligned latent transitions and fitting Koopman operator ...")
+    print("[STAGE 3] Building aligned latent transitions and fitting Shi-style lifted Koopman operator ...")
 
     with torch.no_grad():
-        fr_z, fr_u, fr_zn = encode_latent_batched_src(
+        fr_y, fr_u, fr_yn = encode_latent_batched_src(
             src, fr_buf.s, fr_buf.a, fr_buf.s_next,
             batch_size=cfg.koopman_encode_bs, device=device,
         )
-        ur_z, ur_u, ur_zn = encode_latent_batched_tgt_mapped(
+        ur_y, ur_u, ur_yn = encode_latent_batched_tgt_mapped(
             tgt, aligner, ur_buf.s, ur_buf.a, ur_buf.s_next,
             batch_size=cfg.koopman_encode_bs, device=device,
         )
 
     if cfg.koopman_use_both_domains:
-        z_all = torch.cat([fr_z, ur_z], dim=0)
+        y_all = torch.cat([fr_y, ur_y], dim=0)
         u_all = torch.cat([fr_u, ur_u], dim=0)
-        zn_all = torch.cat([fr_zn, ur_zn], dim=0)
+        yn_all = torch.cat([fr_yn, ur_yn], dim=0)
         domain_note = "franka+ur(mapped)"
     else:
-        z_all, u_all, zn_all = fr_z, fr_u, fr_zn
+        y_all, u_all, yn_all = fr_y, fr_u, fr_yn
         domain_note = "franka_only"
 
-    A_cpu, B_cpu, train_mse = fit_koopman_ridge_cpu(z_all, u_all, zn_all, ridge=cfg.koopman_ridge)
-    print(f"[STAGE 3] train 1-step MSE = {train_mse:.6f} | A={tuple(A_cpu.shape)} B={tuple(B_cpu.shape)}")
+    fr_y_seq_cpu, fr_u_seq_cpu = reshape_to_episodes_cpu(fr_y, fr_u, cfg.episode_len)
+    ur_y_seq_cpu, ur_u_seq_cpu = reshape_to_episodes_cpu(ur_y, ur_u, cfg.episode_len)
+    y_seq_train_cpu, u_seq_train_cpu = (
+        reshape_to_episodes_cpu(y_all, u_all, cfg.episode_len)
+        if cfg.koopman_use_both_domains else (fr_y_seq_cpu, fr_u_seq_cpu)
+    )
 
-    A = A_cpu.to(device)
-    B = B_cpu.to(device)
+    y_dim = fr_y.shape[1]
+    g_dim = cfg.koopman_lift_dim if cfg.koopman_lift_dim > 0 else y_dim
+    if cfg.koopman_lift_dim <= 0:
+        print(f"[STAGE 3] koopman_lift_dim <= 0, auto set to y_dim={y_dim}")
 
-    @torch.no_grad()
-    def reshape_to_episodes(z_flat: torch.Tensor, u_flat: torch.Tensor, T: int):
-        z_flat = z_flat.to(device)
-        u_flat = u_flat.to(device)
-        N = z_flat.shape[0]
-        assert N % T == 0
-        E = N // T
-        return z_flat.view(E, T, -1), u_flat.view(E, T, -1)
+    lifter = LiftingNet(
+        y_dim=y_dim,
+        g_dim=g_dim,
+        n_layers=cfg.koopman_lift_layers,
+        hidden_dim=cfg.koopman_hidden_dim,
+    ).to(device)
+    lift_opt = torch.optim.Adam(lifter.parameters(), lr=cfg.koopman_lr)
 
-    @torch.no_grad()
-    def eval_multi_step_rollout(z_seq, u_seq, A, B, horizon=50, name=""):
-        E, T, dz = z_seq.shape
-        H = min(horizon, T - 1)
-        idx = torch.randperm(E, device=z_seq.device)[: min(E, 64)]
-        z = z_seq[idx, 0]
-        gt = z_seq[idx, 1:H+1]
-        u = u_seq[idx, :H]
+    with torch.no_grad():
+        z_all0 = lift_batched_cpu(lifter, y_all)
+        zn_all0 = lift_batched_cpu(lifter, yn_all)
+        A_cpu, B_cpu, train_mse = fit_koopman_ridge_cpu(z_all0, u_all, zn_all0, ridge=cfg.koopman_ridge)
+
+    print(
+        f"[STAGE 3 INIT] Y_dim={y_dim}, g_dim={g_dim}, Z_dim={y_dim + g_dim}, "
+        f"train 1-step MSE(Z)={train_mse:.6f}"
+    )
+
+    t0 = time.time()
+    for step in range(1, cfg.total_steps_koopman + 1):
+        if step == 1 or step % cfg.koopman_refit_freq == 0:
+            with torch.no_grad():
+                z_all_cpu = lift_batched_cpu(lifter, y_all)
+                zn_all_cpu = lift_batched_cpu(lifter, yn_all)
+                A_cpu, B_cpu, train_mse = fit_koopman_ridge_cpu(
+                    z_all_cpu, u_all, zn_all_cpu, ridge=cfg.koopman_ridge
+                )
+            A_dev = A_cpu.to(device)
+            B_dev = B_cpu.to(device)
+
+        idx_eps = torch.randperm(y_seq_train_cpu.shape[0])[: min(cfg.koopman_batch_episodes, y_seq_train_cpu.shape[0])]
+        y_seq = y_seq_train_cpu[idx_eps].to(device)
+        u_seq = u_seq_train_cpu[idx_eps].to(device)
+        h = min(cfg.koopman_train_horizon, y_seq.shape[1] - 1)
+
+        y0 = y_seq[:, 0]
+        y1 = y_seq[:, 1]
+        u0 = u_seq[:, 0]
+        y1_gt_lift = lifter.lift(y1)
+
+        z0 = lifter.lift(y0)
+        z1_pred = (A_dev @ z0.unsqueeze(-1)).squeeze(-1) + (B_dev @ u0.unsqueeze(-1)).squeeze(-1)
+        loss_one = F.mse_loss(z1_pred, y1_gt_lift)
+
+        z_roll = z0
         preds = []
-        for t in range(H):
-            z = (A @ z.unsqueeze(-1)).squeeze(-1) + (B @ u[:, t].unsqueeze(-1)).squeeze(-1)
-            preds.append(z)
-        pred = torch.stack(preds, dim=1)
-        mse = torch.mean((pred - gt) ** 2).item()
-        print(f"[EVAL] {name} {H}-step rollout MSE = {mse:.6f}")
+        for k in range(h):
+            z_roll = (A_dev @ z_roll.unsqueeze(-1)).squeeze(-1) + (B_dev @ u_seq[:, k].unsqueeze(-1)).squeeze(-1)
+            preds.append(z_roll)
+        pred_seq = torch.stack(preds, dim=1)
 
-    fr_z_seq, fr_u_seq = reshape_to_episodes(fr_z, fr_u, cfg.episode_len)
-    ur_z_seq, ur_u_seq = reshape_to_episodes(ur_z, ur_u, cfg.episode_len)
-    eval_multi_step_rollout(fr_z_seq, fr_u_seq, A, B, horizon=cfg.koopman_rollout_horizon, name="franka")
-    eval_multi_step_rollout(ur_z_seq, ur_u_seq, A, B, horizon=cfg.koopman_rollout_horizon, name="ur(mapped)")
+        gt_lift_seq = lifter.lift(y_seq[:, 1:h+1].reshape(-1, y_dim)).reshape(y_seq.shape[0], h, -1)
+        loss_multi_z = F.mse_loss(pred_seq, gt_lift_seq)
+        loss_multi_y = F.mse_loss(pred_seq[..., :y_dim], y_seq[:, 1:h+1])
+        g_reg = lifter(y_seq.reshape(-1, y_dim)).pow(2).mean()
 
-    save_path = os.path.join(koop_dir, "aligned_latent_and_koopman.pt")
+        loss = (
+            cfg.koopman_one_step_weight * loss_one
+            + cfg.koopman_multi_step_weight * (loss_multi_z + loss_multi_y)
+            + cfg.koopman_g_reg_weight * g_reg
+        )
+
+        lift_opt.zero_grad(set_to_none=True)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(lifter.parameters(), cfg.koopman_grad_clip)
+        lift_opt.step()
+
+        if step % 500 == 0 or step == cfg.total_steps_koopman:
+            dt = time.time() - t0
+            print(
+                f"[KOOP] step={step}/{cfg.total_steps_koopman} "
+                f"loss={loss.item():.6f} one={loss_one.item():.6f} "
+                f"multi_z={loss_multi_z.item():.6f} multi_y={loss_multi_y.item():.6f} "
+                f"greg={g_reg.item():.6f} refit_1step={train_mse:.6f} dt={dt:.1f}s"
+            )
+            t0 = time.time()
+
+    with torch.no_grad():
+        fr_z = lift_batched_cpu(lifter, fr_y)
+        fr_zn = lift_batched_cpu(lifter, fr_yn)
+        ur_z = lift_batched_cpu(lifter, ur_y)
+        ur_zn = lift_batched_cpu(lifter, ur_yn)
+        z_all_final = torch.cat([fr_z, ur_z], dim=0) if cfg.koopman_use_both_domains else fr_z
+        zn_all_final = torch.cat([fr_zn, ur_zn], dim=0) if cfg.koopman_use_both_domains else fr_zn
+        u_all_final = torch.cat([fr_u, ur_u], dim=0) if cfg.koopman_use_both_domains else fr_u
+        A_cpu, B_cpu, train_mse = fit_koopman_ridge_cpu(z_all_final, u_all_final, zn_all_final, ridge=cfg.koopman_ridge)
+        print(f"[STAGE 3 FINAL] train 1-step MSE(Z) = {train_mse:.6f} | A={tuple(A_cpu.shape)} B={tuple(B_cpu.shape)}")
+
+    eval_fr = eval_multi_step_rollout_lifted(
+        fr_y_seq_cpu, fr_u_seq_cpu, lifter, A_cpu.to(device), B_cpu.to(device),
+        horizon=cfg.koopman_rollout_horizon, name="franka"
+    )
+    eval_ur = eval_multi_step_rollout_lifted(
+        ur_y_seq_cpu, ur_u_seq_cpu, lifter, A_cpu.to(device), B_cpu.to(device),
+        horizon=cfg.koopman_rollout_horizon, name="ur(mapped)"
+    )
+
+    save_path = os.path.join(koop_dir, "aligned_latent_and_koopman_shi.pt")
     payload = {
         "meta": {
-            "note": "Stage3 aligned latent transitions + Koopman operator",
+            "note": "Stage3 Shi-style lifted latent transitions + Koopman operator, with Z=[Y;g_theta(Y)]",
             "episode_len": cfg.episode_len,
             "ridge": cfg.koopman_ridge,
             "domain_note": domain_note,
@@ -695,22 +876,49 @@ def main():
             "tgt_act_dim": ur_buf.a.shape[1],
             "franka_action_scale": fr_scale,
             "ur_action_scale": ur_scale,
+            "y_dim": int(y_dim),
+            "g_dim": int(g_dim),
             "dz": int(fr_z.shape[1]),
             "du": int(fr_u.shape[1]),
-            "train_1step_mse": float(train_mse),
+            "train_1step_mse_z": float(train_mse),
+            "franka_rollout_mse_z": float(eval_fr["mse_z"]),
+            "franka_rollout_mse_y": float(eval_fr["mse_y"]),
+            "ur_rollout_mse_z": float(eval_ur["mse_z"]),
+            "ur_rollout_mse_y": float(eval_ur["mse_y"]),
         },
         "data": {
-            "fr_z": fr_z,
+            "fr_y": fr_y,
             "fr_u": fr_u,
+            "fr_yn": fr_yn,
+            "fr_z": fr_z,
             "fr_zn": fr_zn,
-            "ur_z": ur_z,
+            "ur_y": ur_y,
             "ur_u": ur_u,
+            "ur_yn": ur_yn,
+            "ur_z": ur_z,
             "ur_zn": ur_zn,
             "A": A_cpu,
             "B": B_cpu,
+            "C": torch.cat([
+                torch.eye(y_dim, dtype=A_cpu.dtype),
+                torch.zeros(y_dim, g_dim, dtype=A_cpu.dtype)
+            ], dim=1),
+        },
+        "models": {
+            "g_theta": lifter.state_dict(),
         }
     }
     torch.save(payload, save_path)
+
+    torch.save(
+        {
+            "g_theta": lifter.state_dict(),
+            "A": A_cpu,
+            "B": B_cpu,
+            "meta": payload["meta"],
+        },
+        os.path.join(koop_dir, "shi_lifting_bundle.pt")
+    )
 
     if cfg.save_debug_json:
         debug = {
@@ -719,15 +927,21 @@ def main():
             "ur_action_scale": float(ur_scale),
             "franka_raw_action_abs_q995": float(torch.quantile(fr_a2_raw.abs().reshape(-1).cpu(), 0.995).item()),
             "ur_raw_action_abs_q995": float(torch.quantile(ur_a2_raw.abs().reshape(-1).cpu(), 0.995).item()),
-            "train_koopman_mse": float(train_mse),
+            "train_koopman_mse_z": float(train_mse),
             "z_mean": z_mean.detach().cpu().tolist(),
             "z_std": z_std.detach().cpu().tolist(),
+            "y_dim": int(y_dim),
+            "g_dim": int(g_dim),
         }
-        with open(os.path.join(cfg.out_dir, "debug_train_meta.json"), "w", encoding="utf-8") as f:
+        with open(os.path.join(cfg.out_dir, "debug_train_meta_shi.json"), "w", encoding="utf-8") as f:
             json.dump(debug, f, indent=2)
 
     print(f"[STAGE 3 DONE] saved -> {save_path}")
-    print(f"[STAGE 3 DONE] latent shapes: fr_z={tuple(fr_z.shape)} ur_z={tuple(ur_z.shape)} A={tuple(A_cpu.shape)} B={tuple(B_cpu.shape)}")
+    print(
+        f"[STAGE 3 DONE] lifted latent shapes: "
+        f"fr_y={tuple(fr_y.shape)} fr_z={tuple(fr_z.shape)} ur_y={tuple(ur_y.shape)} ur_z={tuple(ur_z.shape)} "
+        f"A={tuple(A_cpu.shape)} B={tuple(B_cpu.shape)}"
+    )
 
 
 if __name__ == "__main__":
