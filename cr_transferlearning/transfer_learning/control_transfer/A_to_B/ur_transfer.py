@@ -13,7 +13,7 @@ from scipy.integrate import odeint
 import time
 import franka as lka
 
-dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
 net_state_dict = dicts["net_state_dict"]
 dnet_state_dict = dicts["dnet_state_dict"]
 enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -44,7 +44,7 @@ dnet = lka.DEC_net(DEC7)
 layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
 Nkoopman = in_dim + encode_dim
 net = lka.Network(layers, Nkoopman, u_dim)
-dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 enc_net2_state_dict = dicts["enc_net2_state_dict"]
 enc_net5_state_dict = dicts["enc_net5_state_dict"]
 dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -71,10 +71,10 @@ dec_net2.cpu().double().load_state_dict(dec_net2_state_dict)
 dec_net5.cpu().double().load_state_dict(dec_net5_state_dict)
 
 
-Ktest_data1 = np.load("/home/ccr/project-koopman/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
-Ktrain_data1 = np.load("/home/ccr/project-koopman/robot_data/speed_traj_data/traj_train_file/Ktrain_data_franka.npy")
-Ktest_data2 = np.load("/home/ccr/project-koopman/robot_data/speed_traj_data/traj_train_file/Ktest_data_ur.npy")
-Ktrain_data2 = np.load("/home/ccr/project-koopman/robot_data/speed_traj_data/traj_train_file/Ktrain_data_ur.npy")
+Ktest_data1 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
+Ktrain_data1 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktrain_data_franka.npy")
+Ktest_data2 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktest_data_ur.npy")
+Ktrain_data2 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktrain_data_ur.npy")
 
 def gaussian_init_(n_units, std=1):
     sampler = torch.distributions.Normal(torch.Tensor([0]), torch.Tensor([std / n_units]))
@@ -339,10 +339,10 @@ def train(env_name, train_steps=200000, suffix="", all_loss=0, \
     # train
     eval_step = 1000
     best_loss = 1000.0
-    logdir = "/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix + "/unified" + env_name + "layer{}_edim{}_eloss{}".format(
+    logdir = "/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/" + suffix + "/unified" + env_name + "layer{}_edim{}_eloss{}".format(
         layer_depth, encode_dim, e_loss)
-    if not os.path.exists("/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix):
-        os.makedirs("/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix)
+    if not os.path.exists("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/" + suffix):
+        os.makedirs("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/" + suffix)
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     writer = SummaryWriter(log_dir=logdir)

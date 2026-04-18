@@ -12,8 +12,8 @@ sys.path.append("../utility/")
 from scipy.integrate import odeint
 import time
 
-Ktest_data1 = np.load("/home/ccr/project-koopman/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
-Ktrain_data1 = np.load("/home/ccr/project-koopman/robot_data/speed_traj_data/traj_train_file/Ktrain_data_franka.npy")
+Ktest_data1 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
+Ktrain_data1 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktrain_data_franka.npy")
 
 
 # define network
@@ -46,7 +46,7 @@ class Network(nn.Module):
     def forward(self, x, u):
         return self.lA(x) + self.lB(u)
 
-
+#状态编码器
 class ENC_net(nn.Module):
     def __init__(self, ENC_layers):
         super(ENC_net, self).__init__()
@@ -60,7 +60,7 @@ class ENC_net(nn.Module):
     def ENC(self, x):
         return self.ENC_net(x)
 
-
+#状态解码器
 class DEC_net(nn.Module):
     def __init__(self, DEC_layers):
         super(DEC_net, self).__init__()
@@ -138,8 +138,9 @@ def Eig_loss(net):
     loss = c[mask].sum()
     return loss
 
-
-def train(env_name, train_steps=200000, suffix="", all_loss=0, \
+#参数修改 env_name, train_steps=200000, suffix="", all_loss=0, \
+          #encode_dim=12, layer_depth=3, e_loss=1, gamma=0.5, Ktrain_samples=50000
+def train(env_name, train_steps=100000, suffix="", all_loss=0, \
           encode_dim=12, layer_depth=3, e_loss=1, gamma=0.5, Ktrain_samples=50000):
     np.random.seed(98)
     Kbatch_size = 128
@@ -153,19 +154,19 @@ def train(env_name, train_steps=200000, suffix="", all_loss=0, \
     layer_width = 128
     layer_width2 = 256
     XENC_layers1 = [primary_sdim1] + [layer_width] * layer_depth + [common_sdim]
-    enc_net1 = ENC_net(XENC_layers1)
+    enc_net1 = ENC_net(XENC_layers1)#状态编码器
     UENC_layers1 = [primary_udim1 + primary_sdim1] + [layer_width] * layer_depth + [common_udim]
-    enc_net4 = ENC_net(UENC_layers1)
+    enc_net4 = ENC_net(UENC_layers1)#动作编码器
     DEC_layers1 = [common_sdim] + [layer_width] * layer_depth + [primary_sdim1]
-    dec_net1 = DEC_net(DEC_layers1)
+    dec_net1 = DEC_net(DEC_layers1)#状态解码器
     DEC_layers4 = [common_udim + primary_sdim1] + [layer_width] * layer_depth + [primary_udim1]
-    dec_net4 = DEC_net(DEC_layers4)
+    dec_net4 = DEC_net(DEC_layers4)#动作解码器
     DEC7 = [common_sdim + common_sdim] + [layer_width] * layer_depth + [common_udim]
-    dnet = DEC_net(DEC7)
+    dnet = DEC_net(DEC7)#从相邻潜在状态对里解码潜在动作
     layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
     Nkoopman = in_dim + encode_dim
     print("layers:", layers)
-    net = Network(layers, Nkoopman, u_dim)
+    net = Network(layers, Nkoopman, u_dim)#koopman动力学网络
     learning_rate = 1e-3
     net.cuda().double()
     dnet.cuda().double()
@@ -187,10 +188,10 @@ def train(env_name, train_steps=200000, suffix="", all_loss=0, \
     # train
     eval_step = 1000
     best_loss = 1000.0
-    logdir = "/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix + "/unified" + env_name + "layer{}_edim{}_eloss{}".format(
+    logdir = "/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/" + suffix + "/unified" + env_name + "layer{}_edim{}_eloss{}".format(
         layer_depth, encode_dim, e_loss)
-    if not os.path.exists("/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix):
-        os.makedirs("/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix)
+    if not os.path.exists("/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/" + suffix):
+        os.makedirs("/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/" + suffix)
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     writer = SummaryWriter(log_dir=logdir)
