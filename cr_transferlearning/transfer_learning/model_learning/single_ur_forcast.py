@@ -4,7 +4,7 @@ import numpy as np
 import franka as lka
 import torch
 
-dicts = torch.load("/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 net_state_dict = dicts["net_state_dict"]
 dnet_state_dict = dicts["dnet_state_dict"]
 enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -35,7 +35,7 @@ dnet = lka.DEC_net(DEC7)
 layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
 Nkoopman = in_dim + encode_dim
 net = lka.Network(layers, Nkoopman, u_dim)
-dicts = torch.load("/control_transfer/A_to_B/Data/franka_to_ur2/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur2/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 enc_net2_state_dict = dicts["enc_net2_state_dict"]
 enc_net5_state_dict = dicts["enc_net5_state_dict"]
 dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -63,10 +63,10 @@ dec_net5.cpu().double().load_state_dict(dec_net5_state_dict)
 
 import os
 suffix = "enc_test2"
-if not os.path.exists("/home/ccr/unified_represention/franka/traj/photo/" + suffix):
-    os.makedirs("/home/ccr/unified_represention/franka/traj/photo/" + suffix)
+if not os.path.exists("/home/nng/koopman_project/cr_transferlearning/unified_represention/franka/traj/photo/" + suffix):
+    os.makedirs("/home/nng/koopman_project/cr_transferlearning/unified_represention/franka/traj/photo/" + suffix)
 
-output_file("/home/ccr/unified_represention/franka/traj/photo/" + suffix + "/1.html")
+output_file("/home/nng/koopman_project/cr_transferlearning/unified_represention/franka/traj/photo/" + suffix + "/1.html")
 
 def plot(test_data,udim):
     state1 = test_data.reshape(-1, 3*udim)
@@ -99,13 +99,13 @@ def plot(test_data,udim):
         show(grid)
 
 def main():
-    test_data = np.load('/robot_data/speed_traj_data/traj_train_file/test_data1_ur.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data1_ur.npy')
     plot(test_data,6)
-    test_data = np.load('/robot_data/speed_traj_data/traj_train_file/test_data2_ur.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data2_ur.npy')
     plot(test_data,6)
-    test_data = np.load('/robot_data/speed_traj_data/traj_train_file/test_data3_ur.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data3_ur.npy')
     plot(test_data,6)
-    test_data = np.load('/robot_data/speed_traj_data/traj_train_file/test_data4_ur.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data4_ur.npy')
     plot(test_data,6)
 
 

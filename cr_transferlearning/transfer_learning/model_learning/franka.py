@@ -12,8 +12,8 @@ sys.path.append("../utility/")
 from scipy.integrate import odeint
 import time
 
-Ktest_data1 = np.load("/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
-Ktrain_data1 = np.load("/robot_data/speed_traj_data/traj_train_file/Ktrain_data_franka.npy")
+Ktest_data1 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
+Ktrain_data1 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktrain_data_franka.npy")
 
 
 # define network
@@ -187,10 +187,10 @@ def train(env_name, train_steps=200000, suffix="", all_loss=0, \
     # train
     eval_step = 1000
     best_loss = 1000.0
-    logdir = "/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix + "/unified" + env_name + "layer{}_edim{}_eloss{}".format(
+    logdir = "/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/" + suffix + "/unified" + env_name + "layer{}_edim{}_eloss{}".format(
         layer_depth, encode_dim, e_loss)
-    if not os.path.exists("/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix):
-        os.makedirs("/home/ccr/project-koopman/control_transfer/A_to_B/Data/" + suffix)
+    if not os.path.exists("/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/" + suffix):
+        os.makedirs("/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/" + suffix)
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     writer = SummaryWriter(log_dir=logdir)

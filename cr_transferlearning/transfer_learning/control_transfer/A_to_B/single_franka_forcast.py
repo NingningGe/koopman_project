@@ -21,8 +21,8 @@ sys.path.append("../utility")
 from bokeh.plotting import figure, output_file, show
 from bokeh.layouts import gridplot
 
-#dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
-dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+#dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
 net_state_dict = dicts["net_state_dict"]
 dnet_state_dict = dicts["dnet_state_dict"]
 enc_net1_state_dict = dicts["enc_net1_state_dict"]

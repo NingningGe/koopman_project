@@ -20,8 +20,8 @@ sys.path.append("../utility")
 # Franka simulator
 from bokeh.plotting import figure, output_file, show
 from bokeh.layouts import gridplot
-
-dicts = torch.load("/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+#dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 net_state_dict = dicts["net_state_dict"]
 dnet_state_dict = dicts["dnet_state_dict"]
 enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -61,10 +61,10 @@ dec_net4.load_state_dict(dec_net4_state_dict)
 
 import os
 suffix = "enc_test4"
-if not os.path.exists("/home/ccr/unified_represention/franka/traj/photo/" + suffix):
-    os.makedirs("/home/ccr/unified_represention/franka/traj/photo/" + suffix)
+if not os.path.exists("/home/nng/koopman_project/cr_transferlearning/unified_represention/franka/traj/photo/" + suffix):
+    os.makedirs("/home/nng/koopman_project/cr_transferlearning/unified_represention/franka/traj/photo/" + suffix)
 
-output_file("/home/ccr/unified_represention/franka/traj/photo/" + suffix + "/1.html")
+output_file("/home/nng/koopman_project/cr_transferlearning/unified_represention/franka/traj/photo/" + suffix + "/1.html")
 
 def plot(test_data,udim):
     state1 = test_data.reshape(-1, 3*udim)
@@ -96,13 +96,13 @@ def plot(test_data,udim):
                     plots[j].line(x, position_data[:, j], line_color="red", line_width=1)
         show(grid)
 def main():
-    test_data = np.load('/model_transfer_robot/speed_traj_data/traj_train_file/test_data1_franka.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data1_franka.npy')
     plot(test_data,7)
-    test_data = np.load('/model_transfer_robot/speed_traj_data/traj_train_file/test_data2_franka.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data2_franka.npy')
     plot(test_data,7)
-    test_data = np.load('/model_transfer_robot/speed_traj_data/traj_train_file/test_data3_franka.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data3_franka.npy')
     plot(test_data,7)
-    test_data = np.load('/model_transfer_robot/speed_traj_data/traj_train_file/test_data4_franka.npy')
+    test_data = np.load('/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/test_data4_franka.npy')
     plot(test_data,7)
 
 if __name__ == "__main__":

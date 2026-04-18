@@ -79,9 +79,9 @@ def Klinear_loss(X1,net,dnet,enc_net1,enc_net4,dec_net1,dec_net4,mse_loss,gamma,
     steps, train_traj_num, NKoopman = X1.shape
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     X1 = torch.DoubleTensor(X1).to(device)
-    X1_enc = enc_net1.ENC(X1[:, :, primary_udim1:])
-    X1_current = net.encode(X1_enc[0, :, :])
-    beta = 1.0
+    X1_enc = enc_net1.ENC(X1[:, :, primary_udim1:])#状态
+    X1_current = net.encode(X1_enc[0, :, :])#koopman状态
+    beta = 1.0#权重
     beta_sum = 0.0
     Y_loss = torch.zeros(1, dtype=torch.float64).to(device)
     dec_Y_loss = torch.zeros(1, dtype=torch.float64).to(device)
@@ -93,30 +93,37 @@ def Klinear_loss(X1,net,dnet,enc_net1,enc_net4,dec_net1,dec_net4,mse_loss,gamma,
     Y_enc_loss = torch.zeros(1, dtype=torch.float64).to(device)
     for i in range(steps - 1):
         X1_current_old = X1_current
-        X1_now = dec_net1.DEC(X1_current[:, :Nstate])
-        U1_all = torch.cat((X1[i, :, :primary_udim1], X1_now), dim=-1)
-        U1 = enc_net4.ENC(U1_all)
+        X1_now = dec_net1.DEC(X1_current[:, :Nstate])#原始状态
+        U1_all = torch.cat((X1[i, :, :primary_udim1], X1_now), dim=-1)#动作拼接状态
+        U1 = enc_net4.ENC(U1_all)#动作U
         beta_sum += beta
+        
         u1 = torch.cat((U1, X1_now), dim=-1)
-        U1_dec = dec_net4.DEC(u1)
-        u_rec_loss += beta * (mse_loss(U1_dec, X1[i, :, :primary_udim1]))
+        U1_dec = dec_net4.DEC(u1)#降维U
+        u_rec_loss += beta * (mse_loss(U1_dec, X1[i, :, :primary_udim1]))#恢复动作
         U1_dec_all = torch.cat((U1_dec, X1_now), dim=-1)
         U1_dec_enc = enc_net4.ENC(U1_dec_all)
-        U_rec_loss += beta * (mse_loss(U1, U1_dec_enc))
-
+        U_rec_loss += beta * (mse_loss(U1, U1_dec_enc))#降再升
+        #koopman线性推进
         X1_current = net.forward(X1_current, U1)
-        Y_loss += beta * (mse_loss(X1_current[:, :Nstate], X1_enc[i + 1, :, :]))
+        Y_loss += beta * (mse_loss(X1_current[:, :Nstate], X1_enc[i + 1, :, :]))#预测
+        #相邻潜在状态对里反推出来的动作
         X1_current_old = torch.cat((X1_current_old[:,:20], X1_current[:,:20]), dim=-1)
         dec_U1 = dnet.DEC(X1_current_old)
         dec_Y_loss += beta * (mse_loss(dec_U1, U1))
+        #推进后的公共状态解码回原始状态，要和真实下一时刻原始状态一致
         X1_next = dec_net1.DEC(X1_current[:, :Nstate])
         x_loss += beta * (mse_loss(X1[i + 1, :, primary_udim1:], X1_next))
+        #解码出来的下一时刻原始状态，再编码回去，应该回到当前推进出的公共状态
         X1_next_enc = enc_net1.ENC(X1_next)
         x_enc_loss += beta * (mse_loss(X1_current[:, :Nstate], X1_next_enc))
+        #编码再解码后的状态，要和原来解码出来的状态一致
         X1_next_enc_dec = dec_net1.DEC(X1_next_enc)
         x_enc_dec_loss += beta * (mse_loss(X1_next_enc_dec, X1_next))
+        #当前推进出的公共状态重新经过 net.encode，要回到原 Koopman 状态
         X1_current_encoded = net.encode(X1_current[:, :Nstate])
         Y_enc_loss += beta * (mse_loss(X1_current_encoded, X1_current))
+
         beta *= gamma
     Y_loss /= beta_sum
     x_loss /= beta_sum
@@ -126,7 +133,7 @@ def Klinear_loss(X1,net,dnet,enc_net1,enc_net4,dec_net1,dec_net4,mse_loss,gamma,
     U_rec_loss /= beta_sum
     x_enc_dec_loss /= beta_sum
     Y_enc_loss /= beta_sum
-    x_loss *= 100
+    x_loss *= 100#最大权重
     loss = Y_loss + x_loss + x_enc_loss + u_rec_loss + U_rec_loss + x_enc_dec_loss + Y_enc_loss + dec_Y_loss
     return loss, Y_loss, x_loss, x_enc_loss, u_rec_loss, U_rec_loss ,x_enc_dec_loss, Y_enc_loss, dec_Y_loss
 

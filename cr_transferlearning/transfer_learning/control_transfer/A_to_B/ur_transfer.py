@@ -293,7 +293,7 @@ def Eig_loss(net):
     return loss
 
 
-def train(env_name, train_steps=200000, suffix="", all_loss=0, \
+def train(env_name, train_steps=100000, suffix="", all_loss=0, \
           encode_dim=12, layer_depth=3, e_loss=1, gamma=0.5, Ktrain_samples=50000):
     np.random.seed(98)
     Kbatch_size = 128
@@ -411,7 +411,7 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", type=str, default="ur_transfer")
-    parser.add_argument("--suffix", type=str, default="franka_to_ur3")
+    parser.add_argument("--suffix", type=str, default="franka_to_ur4")
     parser.add_argument("--K_train_samples", type=int, default=50000)
     parser.add_argument("--e_loss", type=int, default=1)
     parser.add_argument("--gamma", type=float, default=0.8)
