@@ -95,7 +95,7 @@ def Eig_loss(net):
     return loss
 
 
-def train(env_name, train_steps=200000, suffix="", all_loss=0, \
+def train(env_name, train_steps=100000, suffix="", all_loss=0, \
           encode_dim=12, b_dim=2, layer_depth=3, e_loss=1, gamma=0.5, \
           detach=0, Ktrain_samples=50000):
     # Ktrain_samples = 1000
@@ -106,8 +106,8 @@ def train(env_name, train_steps=200000, suffix="", all_loss=0, \
     Kbatch_size = 100
     # data prepare
     u_dim = 7
-    Ktest_data = np.load("/home/ccr/unified_represention/franka/traj/traj_data/Ktest_data_franka.npy")
-    Ktrain_data = np.load("/home/ccr/unified_represention/franka/traj/traj_data/Ktrain_data_franka.npy")
+    Ktest_data = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
+    Ktrain_data = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktrain_data_franka.npy")
     Ktrain_samples = Ktrain_data.shape[1]
     in_dim = Ktest_data.shape[-1] - u_dim
     Nstate = in_dim
@@ -133,10 +133,10 @@ def train(env_name, train_steps=200000, suffix="", all_loss=0, \
     eval_step = 1000
     best_loss = 1000.0
     best_state_dict = {}
-    logdir = "/home/ccr/unified_represention/franka/Data/" + suffix + "/KoopmanNonlinear_" + env_name + "layer{}_edim{}_eloss{}_gamma{}_aloss{}_detach{}_bdim{}_samples{}".format(
+    logdir = "/home/nng/unified_represention/franka/Data/" + suffix + "/KoopmanNonlinear_" + env_name + "layer{}_edim{}_eloss{}_gamma{}_aloss{}_detach{}_bdim{}_samples{}".format(
         layer_depth, encode_dim, e_loss, gamma, all_loss, detach, b_dim, Ktrain_samples)
-    if not os.path.exists("/home/ccr/unified_represention/franka/Data/" + suffix):
-        os.makedirs("/home/ccr/unified_represention/franka/Data/" + suffix)
+    if not os.path.exists("/home/nng/unified_represention/franka/Data/" + suffix):
+        os.makedirs("/home/nng/unified_represention/franka/Data/" + suffix)
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     writer = SummaryWriter(log_dir=logdir)

@@ -44,31 +44,34 @@ dnet = lka.DEC_net(DEC7)
 layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
 Nkoopman = in_dim + encode_dim
 net = lka.Network(layers, Nkoopman, u_dim)
-dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
-enc_net2_state_dict = dicts["enc_net2_state_dict"]
-enc_net5_state_dict = dicts["enc_net5_state_dict"]
-dec_net2_state_dict = dicts["dec_net2_state_dict"]
-dec_net5_state_dict = dicts["dec_net5_state_dict"]
-primary_udim2 = 6
-primary_sdim2 = 12
-XENC_layers2 = [primary_sdim2] + [layer_width] * layer_depth + [common_sdim]
-enc_net2 = lka.ENC_net(XENC_layers2)
-UENC_layers2 = [primary_udim2 + primary_sdim2] + [layer_width] * layer_depth + [common_udim]
-enc_net5 = lka.ENC_net(UENC_layers2)
-DEC_layers2 = [common_sdim] + [layer_width] * layer_depth + [primary_sdim2]
-dec_net2 = lka.DEC_net(DEC_layers2)
-DEC_layers5 = [common_udim + primary_sdim2] + [layer_width] * layer_depth + [primary_udim2]
-dec_net5 = lka.DEC_net(DEC_layers5)
 net.cpu().double().load_state_dict(net_state_dict)
 dnet.cpu().double().load_state_dict(dnet_state_dict)
 enc_net1.cpu().double().load_state_dict(enc_net1_state_dict)
 enc_net4.cpu().double().load_state_dict(enc_net4_state_dict)
 dec_net1.cpu().double().load_state_dict(dec_net1_state_dict)
 dec_net4.cpu().double().load_state_dict(dec_net4_state_dict)
-enc_net2.cpu().double().load_state_dict(enc_net2_state_dict)
-enc_net5.cpu().double().load_state_dict(enc_net5_state_dict)
-dec_net2.cpu().double().load_state_dict(dec_net2_state_dict)
-dec_net5.cpu().double().load_state_dict(dec_net5_state_dict)
+
+# dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+# #dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur2/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+# enc_net2_state_dict = dicts["enc_net2_state_dict"]
+# enc_net5_state_dict = dicts["enc_net5_state_dict"]
+# dec_net2_state_dict = dicts["dec_net2_state_dict"]
+# dec_net5_state_dict = dicts["dec_net5_state_dict"]
+# primary_udim2 = 6
+# primary_sdim2 = 12
+# XENC_layers2 = [primary_sdim2] + [layer_width] * layer_depth + [common_sdim]
+# enc_net2 = lka.ENC_net(XENC_layers2)
+# UENC_layers2 = [primary_udim2 + primary_sdim2] + [layer_width] * layer_depth + [common_udim]
+# enc_net5 = lka.ENC_net(UENC_layers2)
+# DEC_layers2 = [common_sdim] + [layer_width] * layer_depth + [primary_sdim2]
+# dec_net2 = lka.DEC_net(DEC_layers2)
+# DEC_layers5 = [common_udim + primary_sdim2] + [layer_width] * layer_depth + [primary_udim2]
+# dec_net5 = lka.DEC_net(DEC_layers5)
+
+# enc_net2.cpu().double().load_state_dict(enc_net2_state_dict)
+# enc_net5.cpu().double().load_state_dict(enc_net5_state_dict)
+# dec_net2.cpu().double().load_state_dict(dec_net2_state_dict)
+# dec_net5.cpu().double().load_state_dict(dec_net5_state_dict)
 
 
 Ktest_data1 = np.load("/home/nng/koopman_project/cr_transferlearning/robot_data/speed_traj_data/traj_train_file/Ktest_data_franka.npy")
@@ -308,6 +311,21 @@ def train(env_name, train_steps=100000, suffix="", all_loss=0, \
     dec_net2 = DEC_net(DEC_layers2)
     DEC_layers5 = [common_udim + primary_sdim2] + [layer_width] * layer_depth + [primary_udim2]
     dec_net5 = DEC_net(DEC_layers5)
+    # ===== 继续训练：加载上一轮 UR checkpoint =====
+    resume_path = "/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur2/unifiedur_transferlayer3_edim100_eloss1.pth"
+
+    if os.path.exists(resume_path):
+        print(f"[INFO] Resume UR model from: {resume_path}")
+        ur_ckpt = torch.load(resume_path, map_location=torch.device("cpu"))
+
+        enc_net2.load_state_dict(ur_ckpt["enc_net2_state_dict"])
+        enc_net5.load_state_dict(ur_ckpt["enc_net5_state_dict"])
+        dec_net2.load_state_dict(ur_ckpt["dec_net2_state_dict"])
+        dec_net5.load_state_dict(ur_ckpt["dec_net5_state_dict"])
+    else:
+        print(f"[INFO] Resume checkpoint not found, train from scratch: {resume_path}")
+
+
     discriminator1 = Discriminator(common_sdim + common_udim)
     discriminator2 = Discriminator(primary_sdim2 + primary_udim2)
     discriminator3 = Discriminator(primary_sdim1 + primary_udim1)

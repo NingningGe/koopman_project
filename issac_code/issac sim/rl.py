@@ -1,5 +1,7 @@
-control=3
+#   ~/isaacsim/python.sh "/home/nng/koopman_project/issac_code/issac sim/rl.py"
 
+control=3
+from pathlib import Path
 if control==1:
     from omni.isaac.kit import SimulationApp
 
@@ -27,7 +29,7 @@ if control==1:
     articulation_controller.switch_control_mode("velocity")
 
     import td3_continuous_action as td3
-    model_path = "/home/cxf/franka/robot/tranfer_control/1/td3_continuous_action_20250620-163601.cleanrl_model"
+    model_path = "/home/nng/koopman_project/issac_code/tranfer_control/1/td3_continuous_action_20250620-163601.cleanrl_model"
     import torch
     actor_state_dict, qf1_state_dict, qf2_state_dict = torch.load(model_path)
     net1 = td3.Actor(8)
@@ -65,12 +67,13 @@ if control==1:
 
     u_data = np.array(u_data)
     s_data = np.array(s_data)
-    np.save('/home/cxf/franka/u_data_franka.npy', u_data)
-    np.save('/home/cxf/franka/s_data_franka.npy', s_data)
-
+    save_dir = Path("/home/nng/koopman_project/issac_code/franka")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    np.save(save_dir / "u_data_franka.npy", u_data)
+    np.save(save_dir / "s_data_franka.npy", s_data)
     import numpy as np
     import matplotlib.pyplot as plt
-    s_data = np.load('/home/cxf/franka/s_data_franka.npy')
+    s_data = np.load('/home/nng/koopman_project/issac_code/issac sim/franka/s_data_franka.npy')
     s_data=s_data.reshape(-1,14)
     fig, axes = plt.subplots(14, 1, figsize=(10, 14), sharex=True)
     for i in range(14):
@@ -112,7 +115,7 @@ elif control==2:
     articulation_controller.switch_control_mode("velocity")
 
     import td3_continuous_action as td3
-    model_path = "/home/cxf/franka/robot/tranfer_control/ur2.cleanrl_model"
+    model_path = "/home/nng/koopman_project/issac_code/tranfer_control/ur2.cleanrl_model"
     import torch
     actor_state_dict, qf1_state_dict, qf2_state_dict = torch.load(model_path)
     net1 = td3.Actor(8)
@@ -150,12 +153,14 @@ elif control==2:
 
     u_data = np.array(u_data)
     s_data = np.array(s_data)
-    np.save('/home/cxf/franka/u_data_ur.npy', u_data)
-    np.save('/home/cxf/franka/s_data_ur.npy', s_data)
+    save_dir = Path("/home/nng/koopman_project/issac_code/franka")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    np.save(save_dir / "u_data_ur.npy", u_data)
+    np.save(save_dir / "s_data_ur.npy", s_data)
 
     import numpy as np
     import matplotlib.pyplot as plt
-    s_data = np.load('/home/cxf/franka/s_data_ur.npy')
+    s_data = np.load('/home/nng/koopman_project/issac_code/franka/s_data_ur.npy')
     s_data=s_data.reshape(-1,12)
     fig, axes = plt.subplots(12, 1, figsize=(10, 12), sharex=True)
     for i in range(12):
@@ -194,14 +199,14 @@ elif control==3:
     articulation_controller.switch_control_mode("velocity")
 
     import td3_continuous_action as td3
-    model_path = "/home/cxf/franka/robot/tranfer_control/2/td3_continuous_action_20250620-165810.cleanrl_model"
+    model_path = "/home/nng/koopman_project/issac_code/tranfer_control/2/td3_continuous_action_20250620-165810.cleanrl_model"
     import torch
     actor_state_dict, qf1_state_dict, qf2_state_dict = torch.load(model_path)
     net1 = td3.Actor(8)
     net1.load_state_dict(actor_state_dict)
 
     import three_models_speed as lka
-    dicts = torch.load("/home/cxf/franka/robot/tranfer_control/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
     net_state_dict = dicts["net_state_dict"]
     dnet_state_dict = dicts["dnet_state_dict"]
     enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -268,18 +273,29 @@ elif control==3:
         articulation_controller.apply_action(actions)
         for j in range(20):
             my_world.step(render=False)
+            #my_world.step(render=(j == 19))
         
 
     u_data = np.array(u_data)
     s_data = np.array(s_data)
-    np.save('/home/cxf/franka/u_data_franka.npy', u_data)
-    np.save('/home/cxf/franka/s_data_franka.npy', s_data)
+    save_dir = Path("/home/nng/koopman_project/issac_code/franka")
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    np.save(save_dir / "u_data_franka3.npy", u_data)
+    np.save(save_dir / "s_data_franka3.npy", s_data)
+
 
     import numpy as np
     import matplotlib.pyplot as plt
-    s_data = np.load('/home/cxf/franka/s_data_franka.npy')
+    #s_data = np.load('/home/nng/koopman_project/issac_code/franka/s_data_franka.npy')
+    s_data = np.load(save_dir / "s_data_franka3.npy")
     s_data=s_data.reshape(-1,14)
     print(s_data[-1,:])
+
+
+    save_dir = Path("/home/nng/koopman_project/issac_code/franka")
+    save_dir.mkdir(parents=True, exist_ok=True)
+
     fig, axes = plt.subplots(14, 1, figsize=(10, 14), sharex=True)
     for i in range(14):
         axes[i].plot(s_data[:, i], label='angles', color='blue')
@@ -288,4 +304,5 @@ elif control==3:
     axes[-1].set_xlabel('Time step')
     axes[0].legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig(save_dir / "s_data_franka_plot.png", dpi=150)
+    plt.close(fig)

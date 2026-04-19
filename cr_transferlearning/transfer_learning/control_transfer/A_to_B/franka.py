@@ -145,8 +145,7 @@ def Eig_loss(net):
     loss = c[mask].sum()
     return loss
 
-#参数修改 env_name, train_steps=200000, suffix="", all_loss=0, \
-          #encode_dim=12, layer_depth=3, e_loss=1, gamma=0.5, Ktrain_samples=50000
+
 def train(env_name, train_steps=100000, suffix="", all_loss=0, \
           encode_dim=12, layer_depth=3, e_loss=1, gamma=0.5, Ktrain_samples=50000):
     np.random.seed(98)
