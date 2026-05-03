@@ -1,3 +1,5 @@
+#   ~/isaacsim/python.sh "/home/nng/koopman_project/issac_code/issac sim/franka_speed_control.py"
+
 from omni.isaac.kit import SimulationApp
 
 simulation_app = SimulationApp({"headless": False})
@@ -71,7 +73,8 @@ while (time.time() - start_time2) < 500:
         data.append(combined_data)
 
         for i in range(20):
-            my_world.step(render=False)#是否显示
+            #my_world.step(render=False)#是否显示
+            my_world.step(render=True)
 
     else:
         segment_data[f"segment_{segment_counter}"] = np.array(data)
@@ -91,7 +94,7 @@ while (time.time() - start_time2) < 500:
         print(f"Reinitializing robot...")
 
 
-np.save('/home/cxf/franka/traj_speed_file/all_segment_testdata2_franka.npy', segment_data)
+np.save('/home/nng/koopman_project/issac_code/franka/traj_speed_file/all_segment_testdata2_franka.npy', segment_data)
 segments = segment_data.keys()
 print(f"Total number of segments saved: {len(segments)}")
 simulation_app.close()

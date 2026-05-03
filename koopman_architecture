@@ -1,0 +1,127 @@
+digraph Koopman_Architecture {
+	nodesep=0.6 rankdir=LR ranksep=0.8 splines=spline
+	s_t [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>s<SUB>t</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+	a_t [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="paleturquoise" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="paleturquoise" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="paleturquoise" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>a<SUB>t</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+	rank=same
+	s_t -> a_t [style=invis]
+	F [label="State Encoder F" shape=box style=rounded]
+	G [label="Action Encoder G" shape=box style=rounded]
+	Y_t [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="lightgray" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightgray" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightgray" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>Y<SUB>t</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+	U_t [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="pink" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="pink" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="pink" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>U<SUB>t</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+	sum1 [label=<<I>⊕</I>> shape=circle]
+	s_t -> F
+	F -> Y_t
+	s_t -> sum1
+	a_t -> sum1
+	sum1 -> G
+	G -> U_t
+	{
+		rank=same
+		F
+		G
+	}
+	lift [label=<Lifting Net<BR/><I>g_θ</I>> shape=box style=rounded]
+	gY [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="mediumpurple" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="mediumpurple" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="mediumpurple" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>g_θ(Y<SUB>t</SUB>)</I></TD></TR>
+    </TABLE>
+    > shape=none]
+	subgraph cluster_Z {
+		label=<<I>Koopman State Z<SUB>t</SUB> = [Y<SUB>t</SUB>; g_θ(Y<SUB>t</SUB>)]</I>> style=dashed
+		Z_top [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="lightgray" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightgray" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightgray" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>Y<SUB>t</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+		Z_bottom [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="mediumpurple" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="mediumpurple" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="mediumpurple" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>g_θ(Y<SUB>t</SUB>)</I></TD></TR>
+    </TABLE>
+    > shape=none]
+	}
+	Y_t -> Z_top
+	Y_t -> lift
+	lift -> gY
+	gY -> Z_bottom
+	A [label="Koopman Matrix A" shape=box]
+	B [label="Koopman Matrix B" shape=box]
+	sum2 [label=<<I>⊕</I>> shape=circle]
+	Z_t1 [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>Z<SUB>t+1</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+	Z_top -> A
+	Z_bottom -> A
+	A -> sum2
+	U_t -> B
+	B -> sum2
+	sum2 -> Z_t1 [label=<<I>Z<SUB>t+1</SUB> = A Z<SUB>t</SUB> + B U<SUB>t</SUB></I>>]
+	{
+		rank=same
+		A
+		B
+	}
+	Z_tk [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>Z<SUB>t+K</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+	Z_t1 -> Z_tk [label="K-step evolution" style=dashed]
+	extract [label=<<I>Y = CZ</I>> shape=box]
+	Finv [label=<Decoder <I>F<SUP>-1</SUP></I>> shape=box style=rounded]
+	s_t1 [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD BGCOLOR="lightblue" WIDTH="20" HEIGHT="10"></TD></TR>
+        <TR><TD><I>s<SUB>t+1</SUB></I></TD></TR>
+    </TABLE>
+    > shape=none]
+	Z_t1 -> extract
+	extract -> Finv
+	Finv -> s_t1
+}
