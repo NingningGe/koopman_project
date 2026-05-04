@@ -1,0 +1,38 @@
+digraph {
+	nodesep=1.6 rankdir=LR ranksep=1.6 splines=ortho
+	node [fontname=Helvetica shape=box style="rounded,filled"]
+	agent [label="TD3 Agent
+Actor $\pi(a|y)$
+Critic $Q$" fillcolor="#c6dbef"]
+	G [label="Action Encoder $G$
+(Trainable)" fillcolor="#fdae6b" style="rounded,filled,dashed"]
+	u_t [label="$u_t$" fillcolor="#fdd0a2"]
+	agent -> G [label="$a_t$"]
+	G -> u_t
+	koop [label="$y_{t+1}^{raw} = A y_t + B u_t$" fillcolor="#e0e0e0"]
+	y_raw [label="$y_{t+1}^{raw}$" fillcolor="#f0f0f0"]
+	u_t -> koop
+	koop -> y_raw
+	decoder [label="Decoder $F^{-1}$
+(Frozen)" fillcolor="#bdbdbd"]
+	s_hat [label="$\hat{s}_{t+1}$" fillcolor="#edf8e9"]
+	block [label="$\mathcal{R}$
+(Reward)
+Physical Clipping" fillcolor="#fee0d2" shape=box]
+	encoder [label="Encoder $F$
+(Frozen)" fillcolor="#bdbdbd"]
+	y_next [label="$y_{t+1}$" fillcolor="#d9f0d3"]
+	r_t [label="$r_t$" fillcolor="#fcbba1"]
+	y_raw -> decoder
+	decoder -> s_hat
+	s_hat -> block
+	block -> encoder
+	encoder -> y_next
+	block -> r_t
+	r_t -> agent [color=red style=dashed]
+	loop_up [label="" shape=point width=0.01]
+	y_next -> loop_up
+	loop_up -> agent [label="$y_{t+1}$"]
+	G -> koop [style=invis]
+	decoder -> agent [style=invis]
+}

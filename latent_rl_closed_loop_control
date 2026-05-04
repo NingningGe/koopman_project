@@ -1,0 +1,36 @@
+digraph {
+	nodesep=1.2 rankdir=LR ranksep=1.4 splines=ortho
+	node [fontname=Helvetica shape=box style="rounded,filled"]
+	subgraph cluster_agent {
+		fontsize=16 label="TD3 Agent (Controller)" style=dashed
+		actor [label="Actor $\pi(u|y)$" fillcolor="#c6dbef"]
+		critic [label="Critic $Q(y,u)$" fillcolor="#9ecae1"]
+		actor -> critic [style=invis]
+	}
+	subgraph cluster_env {
+		fontsize=16 label="Latent Environment (Koopman)" style=solid
+		koop [label="$y_{t+1} = A y_t + B u_t$" fillcolor="#e0e0e0"]
+	}
+	u_t [label="$u_t$" fillcolor="#fdd0a2"]
+	y_next [label="$y_{t+1}$" fillcolor="#f0f0f0"]
+	actor -> u_t
+	u_t -> koop
+	koop -> y_next
+	loop_down [label="" shape=point width=0.01]
+	loop_left [label="" shape=point width=0.01]
+	y_next -> loop_down
+	loop_down -> loop_left
+	loop_left -> actor
+	loop_left -> critic
+	decoder [label="Decoder $F^{-1}$" fillcolor="#c7e9c0"]
+	state_hat [label="$\hat{s}_{t+1}$" fillcolor="#edf8e9"]
+	reward [label="$\mathcal{R}$" fillcolor="#fee0d2" shape=diamond]
+	r_t [label="$r_t$" fillcolor="#fcbba1"]
+	y_next -> decoder
+	decoder -> state_hat
+	state_hat -> reward
+	reward -> r_t
+	r_t -> critic [color=red style=dashed]
+	u_t -> y_next [style=invis]
+	decoder -> critic [style=invis]
+}

@@ -1,0 +1,33 @@
+digraph {
+	nodesep=1.0 rankdir=LR ranksep=1.2 splines=spline
+	node [fontname=Helvetica shape=box style=filled]
+	subgraph cluster_A {
+		color=blue fontsize=16 label="Domain A: Franka MDP $\mathcal{M}_A$" style=dashed
+		sA [label="$s_A \in \mathbb{R}^{14}$" fillcolor="#c6dbef" height=1.2]
+		aA [label="$a_A \in \mathbb{R}^{7}$" fillcolor="#9ecae1" height=1.2]
+		FA [label="Encoder $F_A$" fillcolor="#6baed6"]
+		GA [label="Encoder $G_A$" fillcolor="#4292c6"]
+		sA -> FA
+		sA -> GA
+		aA -> GA
+	}
+	subgraph cluster_B {
+		color=red fontsize=16 label="Domain B: UR MDP $\mathcal{M}_B$" style=dashed
+		sB [label="$s_B \in \mathbb{R}^{12}$" fillcolor="#fcbba1" height=0.8]
+		aB [label="$a_B \in \mathbb{R}^{6}$" fillcolor="#fc9272" height=0.8]
+		FB [label="Encoder $F_B$" fillcolor="#fb6a4a"]
+		GB [label="Encoder $G_B$" fillcolor="#ef3b2c"]
+		sB -> FB
+		sB -> GB
+		aB -> GB
+	}
+	subgraph cluster_latent {
+		color=purple fontsize=16 label="Shared Latent Manifold" style=dashed
+		y [label="Latent State $y \in \mathbb{R}^d$" fillcolor="#dadaeb" height=1.0]
+		u [label="Latent Action $u \in \mathbb{R}^m$" fillcolor="#bcbddc" height=1.0]
+	}
+	FA -> y [color=black]
+	FB -> y [color=black]
+	GA -> u [color=black]
+	GB -> u [color=black]
+}
