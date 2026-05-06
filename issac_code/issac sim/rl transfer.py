@@ -1,3 +1,5 @@
+#      ~/isaacsim/python.sh "/home/nng/koopman_project/issac_code/issac sim/rl transfer.py"
+
 #2/3.5
 control=3.5
 
@@ -29,13 +31,14 @@ if control==1:
     articulation_controller.switch_control_mode("velocity")
 
     import td3_continuous_action as td3
-    model_path = "/home/cxf/franka/robot/tranfer_control/1/td3_continuous_action_20250620-164253.cleanrl_model"
+    model_path = "/home/nng/koopman_project/issac_code/tranfer_control/1/td3_continuous_action_20250620-164253.cleanrl_model"
     import torch
     actor_state_dict, qf1_state_dict, qf2_state_dict = torch.load(model_path)
     net1 = td3.Actor(8)
     net1.load_state_dict(actor_state_dict)
     import three_models_speed as lka
-    dicts = torch.load("/home/cxf/franka/robot/tranfer_control/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+    #  #
+    dicts = torch.load("/home/nng/koopman_project/issac_code/tranfer_control/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
     net_state_dict = dicts["net_state_dict"]
     dnet_state_dict = dicts["dnet_state_dict"]
     enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -66,7 +69,7 @@ if control==1:
     layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
     Nkoopman = in_dim + encode_dim
     net = lka.Network(layers, Nkoopman, u_dim)
-    dicts = torch.load("/home/cxf/franka/robot/tranfer_control/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/issac_code/tranfer_control/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
     enc_net2_state_dict = dicts["enc_net2_state_dict"]
     enc_net5_state_dict = dicts["enc_net5_state_dict"]
     dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -130,12 +133,12 @@ if control==1:
     u_data = np.array(u_data)
     s_data = np.array(s_data)
     Y_data = np.array(Y_data)
-    np.save('/home/cxf/franka/u_data_ur.npy', u_data)
-    np.save('/home/cxf/franka/s_data_ur.npy', s_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/u_data_ur.npy', u_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_ur.npy', s_data)
 
     import numpy as np
     import matplotlib.pyplot as plt
-    s_data = np.load('/home/cxf/franka/s_data_ur.npy')
+    s_data = np.load('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_ur.npy')
     s_data=s_data.reshape(-1,12)
     print(s_data[-1,:])
     fig, axes = plt.subplots(12, 1, figsize=(10, 12), sharex=True)
@@ -185,13 +188,13 @@ elif control==2:
     articulation_controller.switch_control_mode("velocity")
 
     import td3_continuous_action as td3
-    model_path = "/home/cxf/franka/traj_speed_file/td3_continuous_action2.cleanrl_model"
+    model_path = "/home/nng/koopman_project/issac_code/issac sim/traj_speed_file/td3_continuous_action2.cleanrl_model"
     import torch
     actor_state_dict, qf1_state_dict, qf2_state_dict = torch.load(model_path)
     net1 = td3.Actor(8)
     net1.load_state_dict(actor_state_dict)
     import three_models_speed as lka
-    dicts = torch.load("/home/cxf/franka/traj_speed_file/unifiedsingle_trainlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/issac_code/issac sim/traj_speed_file/unifiedsingle_trainlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
     net_state_dict = dicts["net_state_dict"]
     enc_net1_state_dict = dicts["enc_net1_state_dict"]
     enc_net4_state_dict = dicts["enc_net4_state_dict"]
@@ -218,7 +221,7 @@ elif control==2:
     layers = [in_dim] + [layer_width] * layer_depth + [encode_dim]
     Nkoopman = in_dim + encode_dim
     net = lka.Network(layers, Nkoopman, u_dim)
-    dicts = torch.load("/home/cxf/franka/traj_speed_file/unifiedtwo_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/issac_code/issac sim/traj_speed_file/unifiedtwo_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
     enc_net2_state_dict = dicts["enc_net2_state_dict"]
     enc_net5_state_dict = dicts["enc_net5_state_dict"]
     dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -283,12 +286,12 @@ elif control==2:
 
     u_data = np.array(u_data)
     s_data = np.array(s_data)
-    np.save('/home/cxf/franka/u_data_franka.npy', u_data)
-    np.save('/home/cxf/franka/s_data_franka.npy', s_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/u_data_franka.npy', u_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_franka.npy', s_data)
 
     import numpy as np
     import matplotlib.pyplot as plt
-    s_data = np.load('/home/cxf/franka/s_data_franka.npy')
+    s_data = np.load('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_franka.npy')
     s_data=s_data.reshape(-1,14)
     plt.figure(figsize=(15, 12))
 
@@ -350,13 +353,15 @@ elif control==3:
     articulation_controller.switch_control_mode("velocity")
 
     import td3_continuous_action as td3
-    model_path = "/home/cxf/franka/robot/tranfer_control/Franka_and_ur.cleanrl_model"
+    #model_path = "/home/nng/koopman_project/issac_code/tranfer_control/Franka_and_ur.cleanrl_model"
+    model_path = "/home/nng/koopman_project/issac_code/tranfer_control/Franka_and_Ur.cleanrl_model"
     import torch
     actor_state_dict, qf1_state_dict, qf2_state_dict = torch.load(model_path)
     net1 = td3.Actor(8)
     net1.load_state_dict(actor_state_dict)
     import three_models_speed as lka
-    dicts = torch.load("/home/cxf/franka/robot/tranfer_control/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/issac_code/tranfer_control/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+    
     net_state_dict = dicts["net_state_dict"]
     dnet_state_dict = dicts["dnet_state_dict"]
     enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -387,7 +392,7 @@ elif control==3:
     layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
     Nkoopman = in_dim + encode_dim
     net = lka.Network(layers, Nkoopman, u_dim)
-    dicts = torch.load("/home/cxf/franka/robot/tranfer_control/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/issac_code/tranfer_control/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
     enc_net2_state_dict = dicts["enc_net2_state_dict"]
     enc_net5_state_dict = dicts["enc_net5_state_dict"]
     dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -456,12 +461,12 @@ elif control==3:
     u_data = np.array(u_data)
     s_data = np.array(s_data)
     Y_data = np.array(Y_data)
-    np.save('/home/cxf/franka/u_data_ur.npy', u_data)
-    np.save('/home/cxf/franka/s_data_ur.npy', s_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/u_data_ur.npy', u_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_ur.npy', s_data)
 
     import numpy as np
     import matplotlib.pyplot as plt
-    s_data = np.load('/home/cxf/franka/s_data_ur.npy')
+    s_data = np.load('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_ur.npy')
     s_data=s_data.reshape(-1,12)
     print(s_data[-1,:])
     fig, axes = plt.subplots(12, 1, figsize=(10, 12), sharex=True)
@@ -512,13 +517,13 @@ elif control==3.5:
     articulation_controller.switch_control_mode("velocity")
 
     import td3_continuous_action as td3
-    model_path = "/home/cxf/franka/robot/tranfer_control/2/td3_continuous_action_20250620-165810.cleanrl_model"
+    model_path = "/home/nng/koopman_project/issac_code/tranfer_control/2/td3_continuous_action_20250620-165810.cleanrl_model"
     import torch
     actor_state_dict, qf1_state_dict, qf2_state_dict = torch.load(model_path)
     net1 = td3.Actor(8)
     net1.load_state_dict(actor_state_dict)
     import three_models_speed as lka
-    dicts = torch.load("/home/cxf/franka/robot/tranfer_control/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/issac_code/tranfer_control/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
     net_state_dict = dicts["net_state_dict"]
     dnet_state_dict = dicts["dnet_state_dict"]
     enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -549,7 +554,7 @@ elif control==3.5:
     layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
     Nkoopman = in_dim + encode_dim
     net = lka.Network(layers, Nkoopman, u_dim)
-    dicts = torch.load("/home/cxf/franka/robot/tranfer_control/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+    dicts = torch.load("/home/nng/koopman_project/issac_code/tranfer_control/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
     enc_net2_state_dict = dicts["enc_net2_state_dict"]
     enc_net5_state_dict = dicts["enc_net5_state_dict"]
     dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -575,8 +580,10 @@ elif control==3.5:
     dec_net2.cpu().double().load_state_dict(dec_net2_state_dict)
     dec_net5.cpu().double().load_state_dict(dec_net5_state_dict)
 
-    np.random.seed(11)#beginning11 35
-    # np.random.seed(60)#second53 60
+
+    np.random.seed(53)#效果最好
+    #np.random.seed(11)#beginning11 35
+    #np.random.seed(60)#second53 60
     # p1 = np.array([[0, -0.8, 0, -1.6, 0, 1.6, 0, 0, 0, 0, 0, 0, 0, 0]])
     # point = dec_net2.DEC(enc_net1.ENC(torch.DoubleTensor(p1))).detach().numpy()
     # print(point)
@@ -621,29 +628,40 @@ elif control==3.5:
     u_data = np.array(u_data)
     s_data = np.array(s_data)
     Y_data = np.array(Y_data)
-    np.save('/home/cxf/franka/u_data_ur.npy', u_data)
-    np.save('/home/cxf/franka/s_data_ur.npy', s_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/u_data_ur.npy', u_data)
+    np.save('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_ur.npy', s_data)
 
     import numpy as np
     import matplotlib.pyplot as plt
-    s_data = np.load('/home/cxf/franka/s_data_ur.npy')
-    s_data=s_data.reshape(-1,12)
-    plt.figure(figsize=(15, 12))
 
-    tick_label_size = 18      # 坐标轴刻度标签大小
-    axis_label_size = 16      # 坐标轴标签大小
-    legend_fontsize = 28      # 图例字体大小
+    plt.rcParams['font.family'] = 'serif'
+    plt.rcParams['font.serif'] = ['Times New Roman', 'DejaVu Serif'] # 学术标准字体
+    plt.rcParams['axes.unicode_minus'] = False # 正常显示负号
+
+    s_data = np.load('/home/nng/koopman_project/issac_code/issac sim/ur/s_data_ur.npy')
+    s_data = s_data.reshape(-1, 12)
+    
+    # 设置画布大小
+    plt.figure(figsize=(14, 12))
+
+    tick_label_size = 16      # 坐标轴刻度数字大小
+    axis_label_size = 18      # 坐标轴标签大小
+    legend_fontsize = 20      # 图例字体大小
 
     for i in range(6):
         plt.subplot(6, 1, i + 1)
 
         # 绘制实际轨迹
-        plt.plot(s_data[:, i], color='blue', linewidth=1.5, label='       ')
+        plt.plot(s_data[:, i], color='#1f77b4', linewidth=2.5, label='Actual Trajectory')
         
         # 绘制目标直线
-        plt.plot(point[:, i], color='red', linewidth=1.5, linestyle='--', label='       ')
+        plt.plot(point[:, i], color='#d62728', linewidth=2.5, linestyle='--', label='Target Position')
 
-        plt.grid(True, alpha=0.3)
+        # 添加网格线
+        plt.grid(True, linestyle='--', alpha=0.6)
+
+        # 设置纵坐标标签 (英文 + 物理单位)
+        plt.ylabel(f'Joint {i+1}\n(rad)', fontsize=axis_label_size)
 
         # 获取当前坐标轴
         ax = plt.gca()
@@ -652,9 +670,23 @@ elif control==3.5:
         plt.tick_params(axis='y', labelsize=tick_label_size)
         plt.tick_params(axis='x', labelsize=tick_label_size)
 
+        # 设置横坐标：只在最底部显示 Time Steps
+        if i == 5:
+            plt.xlabel('Time Steps', fontsize=axis_label_size)
+        else:
+            plt.setp(ax.get_xticklabels(), visible=False) # 隐藏上方子图的横坐标数字
+
+        # 只在第一张图的最上方显示一次图例
         if i == 0:
-            ax.legend(fontsize=legend_fontsize, loc='upper right')
+            ax.legend(fontsize=legend_fontsize, loc='upper right', bbox_to_anchor=(1.0, 1.4), ncol=2)
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.9)
-    plt.show()
+    plt.subplots_adjust(top=0.92, hspace=0.15) 
+    
+    # 保存高清 PNG 与 PDF
+    save_path = '/home/nng/koopman_project/issac_code/issac sim/ur/Zero_Shot_Transfer_Pro.png'
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.savefig(save_path.replace('.png', '.pdf'), dpi=300, bbox_inches='tight')
+    
+    print(f"[SUCCESS] 高清英文版轨迹追踪图已成功保存至: {save_path}")
+    plt.close() # 释放内存

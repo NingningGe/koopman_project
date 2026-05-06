@@ -37,20 +37,29 @@ dnet = lka.DEC_net(DEC7)
 layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
 Nkoopman = in_dim + encode_dim
 net = lka.Network(layers, Nkoopman, u_dim)
-dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur2/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+#dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur2/unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 enc_net2_state_dict = dicts["enc_net2_state_dict"]
 enc_net5_state_dict = dicts["enc_net5_state_dict"]
 dec_net2_state_dict = dicts["dec_net2_state_dict"]
 dec_net5_state_dict = dicts["dec_net5_state_dict"]
 primary_udim2 = 6
 primary_sdim2 = 12
-XENC_layers2 = [primary_sdim2] + [layer_width2] * layer_depth + [common_sdim]
+# XENC_layers2 = [primary_sdim2] + [layer_width2] * layer_depth + [common_sdim]
+# enc_net2 = lka.ENC_net(XENC_layers2)
+# UENC_layers2 = [primary_udim2 + primary_sdim2] + [layer_width2] * layer_depth + [common_udim]
+# enc_net5 = lka.ENC_net(UENC_layers2)
+# DEC_layers2 = [common_sdim] + [layer_width2] * layer_depth + [primary_sdim2]
+# dec_net2 = lka.DEC_net(DEC_layers2)
+# DEC_layers5 = [common_udim + primary_sdim2] + [layer_width2] * layer_depth + [primary_udim2]
+
+XENC_layers2 = [primary_sdim2] + [layer_width] * layer_depth + [common_sdim]
 enc_net2 = lka.ENC_net(XENC_layers2)
-UENC_layers2 = [primary_udim2 + primary_sdim2] + [layer_width2] * layer_depth + [common_udim]
+UENC_layers2 = [primary_udim2 + primary_sdim2] + [layer_width] * layer_depth + [common_udim]
 enc_net5 = lka.ENC_net(UENC_layers2)
-DEC_layers2 = [common_sdim] + [layer_width2] * layer_depth + [primary_sdim2]
+DEC_layers2 = [common_sdim] + [layer_width] * layer_depth + [primary_sdim2]
 dec_net2 = lka.DEC_net(DEC_layers2)
-DEC_layers5 = [common_udim + primary_sdim2] + [layer_width2] * layer_depth + [primary_udim2]
+DEC_layers5 = [common_udim + primary_sdim2] + [layer_width] * layer_depth + [primary_udim2]
 dec_net5 = lka.DEC_net(DEC_layers5)
 net.cpu().double().load_state_dict(net_state_dict)
 dnet.cpu().double().load_state_dict(dnet_state_dict)

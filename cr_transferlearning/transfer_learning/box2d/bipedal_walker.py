@@ -340,7 +340,7 @@
 # import gymnasium.envs.box2d.transfer_train as lka
 # import torch
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+# dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
 # net_state_dict = dicts["net_state_dict"]
 # dnet_state_dict = dicts["dnet_state_dict"]
 # enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -504,7 +504,7 @@
 # import torch
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+# dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
 # net_state_dict = dicts["net_state_dict"]
 # dnet_state_dict = dicts["dnet_state_dict"]
 # enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -535,7 +535,7 @@
 # layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
 # Nkoopman = in_dim + encode_dim
 # net = lka.Network(layers, Nkoopman, u_dim)
-# dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+# dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 # enc_net2_state_dict = dicts["enc_net2_state_dict"]
 # enc_net5_state_dict = dicts["enc_net5_state_dict"]
 # dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -691,7 +691,7 @@ import gymnasium.envs.box2d.transfer_train as lka
 import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
 net_state_dict = dicts["net_state_dict"]
 dnet_state_dict = dicts["dnet_state_dict"]
 enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -722,7 +722,7 @@ dnet = lka.DEC_net(DEC7)
 layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
 Nkoopman = in_dim + encode_dim
 net = lka.Network(layers, Nkoopman, u_dim)
-dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 enc_net2_state_dict = dicts["enc_net2_state_dict"]
 enc_net5_state_dict = dicts["enc_net5_state_dict"]
 dec_net2_state_dict = dicts["dec_net2_state_dict"]
@@ -876,7 +876,7 @@ class BipedalWalkerHardcore:
 # import gymnasium.envs.box2d.td3_continuous_action as td3
 # 
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
+# dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka/unifiedur_transferlayer3_edim100_eloss1.pth",map_location=torch.device('cpu'))
 # net_state_dict = dicts["net_state_dict"]
 # dnet_state_dict = dicts["dnet_state_dict"]
 # enc_net1_state_dict = dicts["enc_net1_state_dict"]
@@ -907,7 +907,7 @@ class BipedalWalkerHardcore:
 # layers = [in_dim] + [layer_width2] * layer_depth + [encode_dim]
 # Nkoopman = in_dim + encode_dim
 # net = lka.Network(layers, Nkoopman, u_dim)
-# dicts = torch.load("/home/ccr/project-koopman/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
+# dicts = torch.load("/home/nng/koopman_project/cr_transferlearning/transfer_learning/control_transfer/A_to_B/Data/franka_to_ur/2unifiedur_transferlayer3_edim100_eloss1.pth", map_location=torch.device('cpu'))
 # enc_net2_state_dict = dicts["enc_net2_state_dict"]
 # enc_net5_state_dict = dicts["enc_net5_state_dict"]
 # dec_net2_state_dict = dicts["dec_net2_state_dict"]

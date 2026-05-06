@@ -271,6 +271,7 @@ elif control==3:
                 joint_efforts=None,
             )
         articulation_controller.apply_action(actions)
+        #my_world.step(render=True)
         for j in range(20):
             my_world.step(render=False)
             #my_world.step(render=(j == 19))
@@ -284,25 +285,93 @@ elif control==3:
     np.save(save_dir / "u_data_franka3.npy", u_data)
     np.save(save_dir / "s_data_franka3.npy", s_data)
 
-
     import numpy as np
     import matplotlib.pyplot as plt
-    #s_data = np.load('/home/nng/koopman_project/issac_code/franka/s_data_franka.npy')
+
+    # 1. 加载数据
     s_data = np.load(save_dir / "s_data_franka3.npy")
-    s_data=s_data.reshape(-1,14)
-    print(s_data[-1,:])
+    s_data = s_data.reshape(-1, 14)
+    steps = s_data.shape[0]
+    target_point = np.array([
+        -0.0765, -0.833,  0.0147, -1.705, 
+         0.0193,  1.681,   0.0257,  # 目标位置 (q)
+         0, 0, 0, 0, 0, 0, 0        # 目标速度 (v=0)
+    ]) 
+    
+    # 将目标点扩展为与时间步长度一致，用于绘制红色虚线
+    target_line = np.tile(target_point, (steps, 1))
 
 
-    save_dir = Path("/home/nng/koopman_project/issac_code/franka")
-    save_dir.mkdir(parents=True, exist_ok=True)
+    plt.rcParams['font.family'] = 'serif'
+    plt.rcParams['font.serif'] = ['Times New Roman']
+    
+    # 因为有14个维度，图表需要足够高才不会挤在一起
+    plt.figure(figsize=(12, 18)) 
 
-    fig, axes = plt.subplots(14, 1, figsize=(10, 14), sharex=True)
+    axis_label_size = 14  # 坐标轴标签大小
+    tick_label_size = 12  # 刻度数字大小
+    legend_fontsize = 14  # 图例大小
+
     for i in range(14):
-        axes[i].plot(s_data[:, i], label='angles', color='blue')
-        axes[i].set_title(f'Dimension {i+1}')
-        axes[i].set_ylabel('Angle')
-    axes[-1].set_xlabel('Time step')
-    axes[0].legend()
+        plt.subplot(14, 1, i + 1)
+
+        # 绘制实际轨迹 (蓝色实线，带点透明度和较粗线宽)
+        plt.plot(s_data[:, i], color='#1f77b4', linewidth=2.5, label='Actual Trajectory')
+        
+        # 绘制目标线 (红色虚线)
+        plt.plot(target_line[:, i], color='#d62728', linewidth=2, linestyle='--', label='Target Point')
+
+        # 增加网格线，提升专业感
+        plt.grid(True, linestyle='--', alpha=0.5)
+
+        # ================= 横纵坐标设置 =================
+        # 设置纵坐标 (Y轴)
+        if i < 7:
+            plt.ylabel(f'Pos $q_{i+1}$\n(rad)', fontsize=axis_label_size)
+        else:
+            plt.ylabel(f'Vel $\\dot{{q}}_{i-6}$\n(rad/s)', fontsize=axis_label_size)
+            
+        plt.tick_params(axis='y', labelsize=tick_label_size)
+
+        # 设置横坐标 (X轴)：只在最后一张子图底部显示 X 轴标签，其他的隐藏，让排版更紧凑
+        if i == 13:
+            plt.xlabel('Time Steps ($k$)', fontsize=axis_label_size)
+            plt.tick_params(axis='x', labelsize=tick_label_size)
+        else:
+            plt.xticks([]) # 隐藏非底部的横坐标刻度数字
+
+        # 只在第一张子图显示一次图例
+        if i == 0:
+            plt.legend(fontsize=legend_fontsize, loc='upper right', bbox_to_anchor=(1.0, 1.4), ncol=2)
+
     plt.tight_layout()
-    plt.savefig(save_dir / "s_data_franka_plot.png", dpi=150)
-    plt.close(fig)
+    plt.subplots_adjust(top=0.95) # 给顶部的图例留出一点呼吸空间
+
+
+    save_path = save_dir / "s_data_franka_plot_professional.png"
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.savefig(str(save_path).replace('.png', '.pdf'), bbox_inches='tight') # 顺便存一份pdf备用
+    
+    print(f"[SUCCESS] 高清轨迹追踪图已成功保存至: {save_path}")
+    plt.close()
+    # import numpy as np
+    # import matplotlib.pyplot as plt
+    # #s_data = np.load('/home/nng/koopman_project/issac_code/franka/s_data_franka.npy')
+    # s_data = np.load(save_dir / "s_data_franka3.npy")
+    # s_data=s_data.reshape(-1,14)
+    # print(s_data[-1,:])
+
+
+    # save_dir = Path("/home/nng/koopman_project/issac_code/franka")
+    # save_dir.mkdir(parents=True, exist_ok=True)
+
+    # fig, axes = plt.subplots(14, 1, figsize=(10, 14), sharex=True)
+    # for i in range(14):
+    #     axes[i].plot(s_data[:, i], label='angles', color='blue')
+    #     axes[i].set_title(f'Dimension {i+1}')
+    #     axes[i].set_ylabel('Angle')
+    # axes[-1].set_xlabel('Time step')
+    # axes[0].legend()
+    # plt.tight_layout()
+    # plt.savefig(save_dir / "s_data_franka_plot.png", dpi=150)
+    # plt.close(fig)

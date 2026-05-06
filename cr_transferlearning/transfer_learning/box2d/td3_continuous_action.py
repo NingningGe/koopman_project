@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 class Args:
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     """the name of this experiment"""
-    seed: int = 1
+    seed: int = 53#1
     """seed of the experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
@@ -234,7 +234,11 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         real_next_obs = next_obs.copy()
         for idx, trunc in enumerate(truncations):
             if trunc:
-                real_next_obs[idx] = infos["final_observation"][idx]
+                # 兼容最新版 Gymnasium API，防止 KeyError
+                if "final_observation" in infos:
+                    real_next_obs[idx] = infos["final_observation"][idx]
+                else:
+                    real_next_obs[idx] = next_obs[idx]  # 安全回退机制
         rb.add(obs, real_next_obs, actions, rewards, terminations, infos)
 
         # TRY NOT TO MODIFY: CRUCIAL step easy to overlook
@@ -304,6 +308,10 @@ poetry run pip install "stable_baselines3==2.0.0a1"
 
 
 
+#可视化， tensorboard --logdir /home/nng/koopman_project/runs --bind_all
+# http://localhost:6006
+# tensorboard --logdir /home/nng/koopman_project/cr_transferlearning/transfer_learning/cleanrl-master/cleanrl/runs/Franka_to_ur_BipedalWalker-v3__td3_continuous_action__1__1750409306 --bind_all
+# tensorboard --logdir /home/nng/koopman_project/cr_transferlearning/transfer_learning/cleanrl-master/cleanrl/runs --bind_all
 
 #BW是正常A B的，有偏差
 #第一个random是lA+torch.eye(120) * torch.empty(120).uniform_(-0.01, 0.01) random1_1 900000步，random1_2 120000步,random1_3 300000步
